@@ -1,0 +1,69 @@
+Диалект: MySQL
+
+1.1)Написать запрос который посчитает среднюю, минимальную и максимальную температуру
+
+	select avg(temp), min(temp), max(temp) from beeline_practise.daily_weather;
+
+1.2)Написать запрос который посчитает среднюю, минимальную и максимальную температуру в
+	разрезе месяцев
+	
+	select avg(temp), min(temp), max(temp) from beeline_practise.daily_weather group by month;
+
+2)  Какое максимальное и минимальное количество строк может быть получено при JOINe двух
+	таблиц по 5 строк каждая (поля not NULL).
+	
+	inner - min = 0, max = 25
+	left -  min = 5, max = 25
+	right - min = 5, max = 25
+	full -  min = 25, max = 25
+
+3)  select id, month from beeline_practise.mon_salary
+	where salary > (select avg(salary) from beeline_practise.mon_salary)
+
+
+4)	В таблице VSP_oper_data txn_type принимает значения debit, credit
+	Задание: напишите sql запрос, который для каждого клиента выводит сумму debit, credit операций и
+	последнее посещенное VSP по месяцам. Результат представьте в виде:
+	
+	select
+	main.*, debit.debit_amount as Debit_amount, credit.amount as Credit_amount, last_vsp.vsp_number as Last_VSP
+	from (
+		SELECT Client_id, max(Report_date) as Report_date FROM beeline_practise.vsp_oper_data
+		GROUP BY Client_id) as main
+	left join (
+		SELECT Client_id, SUM(Txn_amount) as debit_amount
+		FROM beeline_practise.vsp_oper_data
+		WHERE Txn_type = 'debit '
+		GROUP BY Client_id) as debit
+	on main.Client_id = debit.Client_id
+	left join (
+		SELECT Client_id, SUM(Txn_amount) as amount
+		FROM beeline_practise.vsp_oper_data
+		WHERE Txn_type = 'credit'
+		GROUP BY Client_id) as credit
+	on main.Client_id = credit.Client_id
+	left join (
+		SELECT Client_id, vsp_number FROM beeline_practise.vsp_oper_data AS d
+		WHERE Report_date =
+			(SELECT MAX(Report_date) FROM beeline_practise.vsp_oper_data AS d2 WHERE d.Client_id= d2.Client_id)
+		group by Client_id
+	) as last_vsp
+	on main.Client_id = last_vsp.Client_id
+	
+5)	1. Реализовать задачу из п. 2 тремя различными способами
+	2. Написать sql запрос который считает для каждого дня среднюю температуру за 5 предыдущих
+	   дней
+
+
+6)	Задание: напишите sql запрос, который для каждого клиента из VSP_oper_data выведет долю debit
+	операций клиента к debit операциям всех клиентов по месяцам. Результат в виде таблицы:
+	
+	select 
+	client_id, 
+	Report_date,
+	(select txn_amount where txn_type = 'debit ') / (select sum(txn_amount) from beeline_practise.vsp_oper_data where txn_type = 'debit ') as 'ratio'
+	from beeline_practise.vsp_oper_data
+	where (select txn_amount where txn_type = 'debit ') / (select sum(txn_amount) from beeline_practise.vsp_oper_data where txn_type = 'debit ') is not null
+
+	
+	
